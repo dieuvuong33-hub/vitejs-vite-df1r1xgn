@@ -29,7 +29,6 @@ const PASTEL_COLORS = [
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [letters, setLetters] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
   const [readingLetter, setReadingLetter] = useState<any>(null);
@@ -49,7 +48,6 @@ export default function App() {
     const q = query(collection(db, "letters"), orderBy("createdAt", "desc"));
     return onSnapshot(q, (snapshot) => {
       setLetters(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setLoading(false);
     });
   }, [user]);
 
@@ -58,9 +56,7 @@ export default function App() {
     if (!message.trim()) return;
     setIsSubmitting(true);
     
-    // Thuật toán chọn tọa độ ngẫu nhiên GỌN TRONG TÁN CÂY
-    // Tâm tán cây ở khoảng X:600, Y:310 (theo tọa độ SVG)
-    // Bán kính ngang max ~220, bán kính dọc max ~150
+    // Tọa độ ngẫu nhiên GỌN TRONG TÁN CÂY
     const angle = Math.random() * 2 * Math.PI;
     const radius = Math.sqrt(Math.random());
     const randomX = 600 + (radius * 220) * Math.cos(angle);
@@ -85,7 +81,6 @@ export default function App() {
   };
 
   const handleDeleteLetter = async () => {
-    // Mật khẩu Admin bảo mật (Chỉ mình bạn biết)
     const pass = prompt("Nhập mật khẩu quản trị viên để xóa thư này:");
     if (pass === "nova2026") {
       try {
@@ -108,7 +103,7 @@ export default function App() {
   return (
     <div className="w-screen h-screen overflow-hidden bg-gradient-to-b from-[#87CEEB] via-[#B3E5FC] to-[#F1F8E9] flex flex-col relative font-sans">
       
-      {/* Thanh Header Rút Gọn */}
+      {/* Header Rút Gọn */}
       <header className="px-6 py-4 bg-white/60 backdrop-blur-md shadow-sm flex items-center justify-between z-30">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-inner">
@@ -134,10 +129,10 @@ export default function App() {
         </div>
       </header>
 
-      {/* Khu vực trung tâm chứa toàn bộ hình ảnh và thư */}
+      {/* Main Content */}
       <main className="flex-1 relative flex items-end justify-center overflow-hidden">
         
-        {/* Tên Sự Kiện - Ở giữa trên cùng */}
+        {/* Tên Sự Kiện */}
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none w-full px-4">
           <h2 
             className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-emerald-100 font-serif tracking-wider"
@@ -147,11 +142,10 @@ export default function App() {
           </h2>
         </div>
 
-        {/* Bản vẽ SVG chứa Cây và Thư Đính Kèm Cố Định */}
+        {/* SVG Bản vẽ */}
         <div className="absolute inset-0 w-full h-full flex items-end justify-center z-10">
           <svg className="w-full h-full" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
             
-            {/* Nắng & Mây */}
             <defs>
               <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stopColor="#FFF59D" stopOpacity="0.7" />
@@ -165,12 +159,10 @@ export default function App() {
             <path d="M 850 280 a 25 25 0 0 1 25 -25 a 40 40 0 0 1 70 0 a 25 25 0 0 1 0 50 h -95 a 25 25 0 0 1 0 -50 z" fill="white" opacity="0.8" pointerEvents="none" />
             <path d="M 400 150 a 20 20 0 0 1 20 -20 a 30 30 0 0 1 50 0 a 20 20 0 0 1 0 40 h -70 a 20 20 0 0 1 0 -40 z" fill="white" opacity="0.7" pointerEvents="none" />
 
-            {/* Bãi cỏ */}
             <ellipse cx="300" cy="900" rx="700" ry="250" fill="#81C784" pointerEvents="none" />
             <ellipse cx="900" cy="950" rx="800" ry="280" fill="#66BB6A" pointerEvents="none" />
             <ellipse cx="600" cy="850" rx="550" ry="150" fill="#4CAF50" pointerEvents="none" />
 
-            {/* Hoa dại */}
             <circle cx="350" cy="780" r="6" fill="#FF8A80" pointerEvents="none" />
             <circle cx="365" cy="785" r="5" fill="#FFFF8D" pointerEvents="none" />
             <circle cx="800" cy="810" r="7" fill="#B388FF" pointerEvents="none" />
@@ -180,13 +172,11 @@ export default function App() {
             <circle cx="500" cy="870" r="5" fill="#8C9EFF" pointerEvents="none" />
             <circle cx="680" cy="860" r="6" fill="#FFFF8D" pointerEvents="none" />
 
-            {/* GỐC CÂY */}
             <path d="M 560 300 L 560 650 Q 560 820 400 880 L 800 880 Q 640 820 640 650 L 640 300 Z" fill="#4E342E" pointerEvents="none" />
             <path d="M 600 400 Q 480 300 380 300" stroke="#4E342E" strokeWidth="25" strokeLinecap="round" fill="none" pointerEvents="none" />
             <path d="M 600 400 Q 720 300 820 300" stroke="#4E342E" strokeWidth="25" strokeLinecap="round" fill="none" pointerEvents="none" />
             <path d="M 600 400 L 600 200" stroke="#4E342E" strokeWidth="30" strokeLinecap="round" fill="none" pointerEvents="none" />
             
-            {/* TÁN LÁ (Background cho thư đính lên) */}
             <circle cx="600" cy="350" r="240" fill="#2E7D32" opacity="0.95" pointerEvents="none" />
             <circle cx="420" cy="380" r="160" fill="#388E3C" opacity="0.95" pointerEvents="none" />
             <circle cx="780" cy="380" r="160" fill="#4CAF50" opacity="0.95" pointerEvents="none" />
@@ -194,15 +184,14 @@ export default function App() {
             <circle cx="500" cy="460" r="120" fill="#81C784" opacity="0.9" pointerEvents="none" />
             <circle cx="700" cy="460" r="120" fill="#388E3C" opacity="0.9" pointerEvents="none" />
 
-            {/* HIỂN THỊ THƯ DÍNH TRỰC TIẾP LÊN TÁN CÂY */}
+            {/* HIỂN THỊ THƯ DÍNH LÊN CÂY */}
             {filteredLetters.map((item) => {
-              // Nếu thư cũ chưa có tọa độ, gán tạm vào giữa tán cây
               const x = item.xPos || 600;
               const y = item.yPos || 310;
               return (
                 <foreignObject
                   key={item.id}
-                  x={x - 60} // Căn giữa bao thư (width 120 / 2)
+                  x={x - 60} 
                   y={y - 30}
                   width="120"
                   height="80"
@@ -212,7 +201,6 @@ export default function App() {
                     className="w-full h-full flex flex-col items-center justify-start group cursor-pointer animate-in zoom-in duration-300"
                     onClick={() => setReadingLetter(item)}
                   >
-                    {/* Phong bì thư siêu nhỏ */}
                     <div 
                       style={{ backgroundColor: item.color || '#FFFACD' }} 
                       className="w-11 h-8 rounded shadow-md border border-black/10 flex items-center justify-center relative overflow-hidden group-hover:-translate-y-1 transition-transform"
@@ -220,7 +208,6 @@ export default function App() {
                       <div className="absolute top-0 left-0 w-full h-[55%] border-b border-black/10 bg-white/30" style={{ clipPath: 'polygon(0 0, 50% 100%, 100% 0)' }}></div>
                       <Heart size={10} className="text-red-400 opacity-80 mt-2" fill="currentColor" />
                     </div>
-                    {/* Chú thích tên hiện ra khi Hover */}
                     <div className="mt-1 bg-black/75 text-white text-[10px] px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg pointer-events-none">
                       Đến: {item.recipient}
                     </div>
@@ -231,7 +218,7 @@ export default function App() {
           </svg>
         </div>
 
-        {/* Nút Gửi Tâm Thư - Góc dưới bên phải */}
+        {/* Nút Gửi Tâm Thư */}
         <button
           onClick={() => setIsWriteModalOpen(true)}
           className="absolute bottom-8 right-6 md:right-8 flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold shadow-2xl hover:from-emerald-600 hover:to-teal-700 transition transform hover:scale-110 hover:-translate-y-1 z-30 border-2 border-white/50"
@@ -241,7 +228,7 @@ export default function App() {
           <span className="text-lg sm:hidden">Viết</span>
         </button>
 
-        {/* Thống kê - Góc dưới bên trái */}
+        {/* Thống kê */}
         <div className="absolute bottom-8 left-6 md:left-8 bg-white/90 backdrop-blur px-5 py-3 rounded-full shadow-lg text-sm font-bold text-emerald-800 flex items-center gap-2 z-20 border border-white">
           <Star size={18} className="text-yellow-500 fill-yellow-500" /> 
           <span className="hidden sm:inline">Tổng số:</span> {letters.length} phong bì
@@ -287,17 +274,15 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal Đọc Thư & Quyền Xoá Của Admin */}
+      {/* Modal Đọc Thư */}
       {readingLetter && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div style={{ backgroundColor: readingLetter.color || '#FFFACD' }} className="rounded-2xl shadow-2xl w-full max-w-md p-8 relative border border-black/10 animate-in zoom-in-95 duration-200">
             
-            {/* Nút Đóng */}
             <button onClick={() => setReadingLetter(null)} className="absolute top-4 right-4 text-gray-700 hover:text-black bg-white/40 hover:bg-white/80 transition p-1.5 rounded-full z-10">
               <X size={18} />
             </button>
             
-            {/* Nút XOÁ THƯ (Dành riêng cho Admin) */}
             <button 
               onClick={handleDeleteLetter} 
               title="Xóa thư (Chỉ Admin)"
