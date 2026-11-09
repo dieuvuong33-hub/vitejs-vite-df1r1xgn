@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { Heart, Send, Search, Sparkles, Star, RefreshCw, X, PenTool } from 'lucide-react';
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { Heart, Send, Search, Sparkles, Star, RefreshCw, X, PenTool, Trash2 } from 'lucide-react';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCRuJxbJ6ck7BdUvK-28vVPUmWJMyBaHcY",
@@ -57,12 +57,23 @@ export default function App() {
     e.preventDefault();
     if (!message.trim()) return;
     setIsSubmitting(true);
+    
+    // Thuật toán chọn tọa độ ngẫu nhiên GỌN TRONG TÁN CÂY
+    // Tâm tán cây ở khoảng X:600, Y:310 (theo tọa độ SVG)
+    // Bán kính ngang max ~220, bán kính dọc max ~150
+    const angle = Math.random() * 2 * Math.PI;
+    const radius = Math.sqrt(Math.random());
+    const randomX = 600 + (radius * 220) * Math.cos(angle);
+    const randomY = 310 + (radius * 150) * Math.sin(angle);
+
     try {
       await addDoc(collection(db, "letters"), {
         message: message.trim(),
         author: authorName.trim() || "Người ẩn danh",
         recipient,
         color: selectedColor,
+        xPos: randomX,
+        yPos: randomY,
         createdAt: serverTimestamp()
       });
       setMessage("");
@@ -70,6 +81,22 @@ export default function App() {
       setIsWriteModalOpen(false);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteLetter = async () => {
+    // Mật khẩu Admin bảo mật (Chỉ mình bạn biết)
+    const pass = prompt("Nhập mật khẩu quản trị viên để xóa thư này:");
+    if (pass === "nova2026") {
+      try {
+        await deleteDoc(doc(db, "letters", readingLetter.id));
+        setReadingLetter(null);
+        alert("Đã xóa thư thành công!");
+      } catch (err) {
+        alert("Có lỗi xảy ra khi xóa thư!");
+      }
+    } else if (pass !== null) {
+      alert("Mật khẩu không chính xác. Bạn không có quyền xóa!");
     }
   };
 
@@ -101,13 +128,13 @@ export default function App() {
               placeholder="Tìm theo tên/người nhận..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-white/90 border border-emerald-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 w-64 shadow-sm"
+              className="pl-9 pr-4 py-2 bg-white/90 border border-emerald-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 w-56 md:w-64 shadow-sm"
             />
           </div>
         </div>
       </header>
 
-      {/* Khu vực trung tâm */}
+      {/* Khu vực trung tâm chứa toàn bộ hình ảnh và thư */}
       <main className="flex-1 relative flex items-end justify-center overflow-hidden">
         
         {/* Tên Sự Kiện - Ở giữa trên cùng */}
@@ -120,9 +147,9 @@ export default function App() {
           </h2>
         </div>
 
-        {/* Bản vẽ Cây Hình Tròn & Gốc Loe */}
-        <div className="absolute inset-0 w-full h-full flex items-end justify-center pointer-events-none z-0">
-          <svg className="w-full h-full" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Bản vẽ SVG chứa Cây và Thư Đính Kèm Cố Định */}
+        <div className="absolute inset-0 w-full h-full flex items-end justify-center z-10">
+          <svg className="w-full h-full" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
             
             {/* Nắng & Mây */}
             <defs>
@@ -131,100 +158,93 @@ export default function App() {
                 <stop offset="100%" stopColor="#FFF59D" stopOpacity="0" />
               </radialGradient>
             </defs>
-            <circle cx="1000" cy="180" r="150" fill="url(#sunGlow)" />
-            <circle cx="1000" cy="180" r="50" fill="#FFD54F" />
+            <circle cx="1000" cy="180" r="150" fill="url(#sunGlow)" pointerEvents="none" />
+            <circle cx="1000" cy="180" r="50" fill="#FFD54F" pointerEvents="none" />
 
-            <path d="M 200 250 a 30 30 0 0 1 30 -30 a 50 50 0 0 1 90 0 a 30 30 0 0 1 0 60 h -120 a 30 30 0 0 1 0 -60 z" fill="white" opacity="0.9" />
-            <path d="M 850 280 a 25 25 0 0 1 25 -25 a 40 40 0 0 1 70 0 a 25 25 0 0 1 0 50 h -95 a 25 25 0 0 1 0 -50 z" fill="white" opacity="0.8" />
-            <path d="M 400 150 a 20 20 0 0 1 20 -20 a 30 30 0 0 1 50 0 a 20 20 0 0 1 0 40 h -70 a 20 20 0 0 1 0 -40 z" fill="white" opacity="0.7" />
+            <path d="M 200 250 a 30 30 0 0 1 30 -30 a 50 50 0 0 1 90 0 a 30 30 0 0 1 0 60 h -120 a 30 30 0 0 1 0 -60 z" fill="white" opacity="0.9" pointerEvents="none" />
+            <path d="M 850 280 a 25 25 0 0 1 25 -25 a 40 40 0 0 1 70 0 a 25 25 0 0 1 0 50 h -95 a 25 25 0 0 1 0 -50 z" fill="white" opacity="0.8" pointerEvents="none" />
+            <path d="M 400 150 a 20 20 0 0 1 20 -20 a 30 30 0 0 1 50 0 a 20 20 0 0 1 0 40 h -70 a 20 20 0 0 1 0 -40 z" fill="white" opacity="0.7" pointerEvents="none" />
 
-            {/* Bãi cỏ uốn lượn */}
-            <ellipse cx="300" cy="900" rx="700" ry="250" fill="#81C784" />
-            <ellipse cx="900" cy="950" rx="800" ry="280" fill="#66BB6A" />
-            <ellipse cx="600" cy="850" rx="550" ry="150" fill="#4CAF50" />
+            {/* Bãi cỏ */}
+            <ellipse cx="300" cy="900" rx="700" ry="250" fill="#81C784" pointerEvents="none" />
+            <ellipse cx="900" cy="950" rx="800" ry="280" fill="#66BB6A" pointerEvents="none" />
+            <ellipse cx="600" cy="850" rx="550" ry="150" fill="#4CAF50" pointerEvents="none" />
 
-            {/* Hoa trên cỏ */}
-            <circle cx="350" cy="780" r="6" fill="#FF8A80" />
-            <circle cx="365" cy="785" r="5" fill="#FFFF8D" />
-            <circle cx="800" cy="810" r="7" fill="#B388FF" />
-            <circle cx="815" cy="805" r="5" fill="#FF8A80" />
-            <circle cx="200" cy="850" r="6" fill="#FFFF8D" />
-            <circle cx="950" cy="750" r="6" fill="#FF8A80" />
-            <circle cx="500" cy="870" r="5" fill="#8C9EFF" />
-            <circle cx="680" cy="860" r="6" fill="#FFFF8D" />
+            {/* Hoa dại */}
+            <circle cx="350" cy="780" r="6" fill="#FF8A80" pointerEvents="none" />
+            <circle cx="365" cy="785" r="5" fill="#FFFF8D" pointerEvents="none" />
+            <circle cx="800" cy="810" r="7" fill="#B388FF" pointerEvents="none" />
+            <circle cx="815" cy="805" r="5" fill="#FF8A80" pointerEvents="none" />
+            <circle cx="200" cy="850" r="6" fill="#FFFF8D" pointerEvents="none" />
+            <circle cx="950" cy="750" r="6" fill="#FF8A80" pointerEvents="none" />
+            <circle cx="500" cy="870" r="5" fill="#8C9EFF" pointerEvents="none" />
+            <circle cx="680" cy="860" r="6" fill="#FFFF8D" pointerEvents="none" />
 
-            {/* GỐC CÂY CỔ THỤ (Bám rễ, phình to ở dưới) */}
-            <path d="M 560 300 L 560 650 Q 560 820 400 880 L 800 880 Q 640 820 640 650 L 640 300 Z" fill="#4E342E" />
-            {/* Các cành ẩn trong tán */}
-            <path d="M 600 400 Q 480 300 380 300" stroke="#4E342E" strokeWidth="25" strokeLinecap="round" fill="none" />
-            <path d="M 600 400 Q 720 300 820 300" stroke="#4E342E" strokeWidth="25" strokeLinecap="round" fill="none" />
-            <path d="M 600 400 L 600 200" stroke="#4E342E" strokeWidth="30" strokeLinecap="round" fill="none" />
+            {/* GỐC CÂY */}
+            <path d="M 560 300 L 560 650 Q 560 820 400 880 L 800 880 Q 640 820 640 650 L 640 300 Z" fill="#4E342E" pointerEvents="none" />
+            <path d="M 600 400 Q 480 300 380 300" stroke="#4E342E" strokeWidth="25" strokeLinecap="round" fill="none" pointerEvents="none" />
+            <path d="M 600 400 Q 720 300 820 300" stroke="#4E342E" strokeWidth="25" strokeLinecap="round" fill="none" pointerEvents="none" />
+            <path d="M 600 400 L 600 200" stroke="#4E342E" strokeWidth="30" strokeLinecap="round" fill="none" pointerEvents="none" />
             
-            {/* TÁN LÁ HÌNH TRÒN */}
-            {/* Lớp nền sau */}
-            <circle cx="600" cy="350" r="240" fill="#2E7D32" opacity="0.95" />
-            {/* Cụm trái / phải */}
-            <circle cx="420" cy="380" r="160" fill="#388E3C" opacity="0.95" />
-            <circle cx="780" cy="380" r="160" fill="#4CAF50" opacity="0.95" />
-            {/* Cụm trên */}
-            <circle cx="600" cy="180" r="150" fill="#66BB6A" opacity="0.95" />
-            {/* Cụm xoè dưới */}
-            <circle cx="500" cy="460" r="120" fill="#81C784" opacity="0.9" />
-            <circle cx="700" cy="460" r="120" fill="#388E3C" opacity="0.9" />
-          </svg>
-        </div>
+            {/* TÁN LÁ (Background cho thư đính lên) */}
+            <circle cx="600" cy="350" r="240" fill="#2E7D32" opacity="0.95" pointerEvents="none" />
+            <circle cx="420" cy="380" r="160" fill="#388E3C" opacity="0.95" pointerEvents="none" />
+            <circle cx="780" cy="380" r="160" fill="#4CAF50" opacity="0.95" pointerEvents="none" />
+            <circle cx="600" cy="180" r="150" fill="#66BB6A" opacity="0.95" pointerEvents="none" />
+            <circle cx="500" cy="460" r="120" fill="#81C784" opacity="0.9" pointerEvents="none" />
+            <circle cx="700" cy="460" r="120" fill="#388E3C" opacity="0.9" pointerEvents="none" />
 
-        {/* Lớp hiển thị Phong bì thư */}
-        <div className="absolute top-[20%] w-full max-w-4xl h-[45%] z-10 px-8">
-          {loading ? (
-            <div className="flex justify-center items-center h-full">
-              <div className="flex items-center gap-2 bg-white/80 px-6 py-3 rounded-full text-emerald-800 shadow">
-                <RefreshCw className="animate-spin" size={20} /> Đang tải cây tâm thư...
-              </div>
-            </div>
-          ) : filteredLetters.length === 0 ? (
-            <div className="flex justify-center items-center h-full mt-10">
-              <div className="text-center bg-white/90 backdrop-blur px-8 py-6 rounded-2xl shadow-lg border border-emerald-100">
-                <p className="text-gray-700 font-medium mb-2">Chưa có lá thư nào treo trên cây.</p>
-                <p className="text-sm text-gray-500">Hãy gửi chiếc phong bì đầu tiên lên cây nhé! ✨</p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-wrap justify-center content-start gap-x-6 gap-y-8 w-full h-full overflow-y-auto pb-10" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-              {filteredLetters.map((item) => (
-                <div
+            {/* HIỂN THỊ THƯ DÍNH TRỰC TIẾP LÊN TÁN CÂY */}
+            {filteredLetters.map((item) => {
+              // Nếu thư cũ chưa có tọa độ, gán tạm vào giữa tán cây
+              const x = item.xPos || 600;
+              const y = item.yPos || 310;
+              return (
+                <foreignObject
                   key={item.id}
-                  onClick={() => setReadingLetter(item)}
-                  className="relative cursor-pointer hover:-translate-y-2 transition-transform duration-300 animate-in zoom-in group"
+                  x={x - 60} // Căn giữa bao thư (width 120 / 2)
+                  y={y - 30}
+                  width="120"
+                  height="80"
+                  className="overflow-visible"
                 >
                   <div 
-                    style={{ backgroundColor: item.color || '#FFFACD' }} 
-                    className="w-16 h-12 rounded-md shadow-md border border-black/10 flex items-center justify-center relative overflow-hidden"
+                    className="w-full h-full flex flex-col items-center justify-start group cursor-pointer animate-in zoom-in duration-300"
+                    onClick={() => setReadingLetter(item)}
                   >
-                    <div className="absolute top-0 left-0 w-full h-[55%] border-b border-black/10 bg-white/30" style={{ clipPath: 'polygon(0 0, 50% 100%, 100% 0)' }}></div>
-                    <Heart size={12} className="text-red-400 opacity-80 mt-3" fill="currentColor" />
+                    {/* Phong bì thư siêu nhỏ */}
+                    <div 
+                      style={{ backgroundColor: item.color || '#FFFACD' }} 
+                      className="w-11 h-8 rounded shadow-md border border-black/10 flex items-center justify-center relative overflow-hidden group-hover:-translate-y-1 transition-transform"
+                    >
+                      <div className="absolute top-0 left-0 w-full h-[55%] border-b border-black/10 bg-white/30" style={{ clipPath: 'polygon(0 0, 50% 100%, 100% 0)' }}></div>
+                      <Heart size={10} className="text-red-400 opacity-80 mt-2" fill="currentColor" />
+                    </div>
+                    {/* Chú thích tên hiện ra khi Hover */}
+                    <div className="mt-1 bg-black/75 text-white text-[10px] px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg pointer-events-none">
+                      Đến: {item.recipient}
+                    </div>
                   </div>
-                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/75 text-white text-[11px] px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity shadow-lg">
-                    Gửi: {item.recipient}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                </foreignObject>
+              );
+            })}
+          </svg>
         </div>
 
         {/* Nút Gửi Tâm Thư - Góc dưới bên phải */}
         <button
           onClick={() => setIsWriteModalOpen(true)}
-          className="absolute bottom-8 right-8 flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold shadow-2xl hover:from-emerald-600 hover:to-teal-700 transition transform hover:scale-110 hover:-translate-y-1 z-30 border-2 border-white/50"
+          className="absolute bottom-8 right-6 md:right-8 flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-bold shadow-2xl hover:from-emerald-600 hover:to-teal-700 transition transform hover:scale-110 hover:-translate-y-1 z-30 border-2 border-white/50"
         >
           <PenTool size={22} />
-          <span className="text-lg">Viết Tâm Thư</span>
+          <span className="text-lg hidden sm:block">Viết Tâm Thư</span>
+          <span className="text-lg sm:hidden">Viết</span>
         </button>
 
         {/* Thống kê - Góc dưới bên trái */}
-        <div className="absolute bottom-8 left-8 bg-white/90 backdrop-blur px-5 py-3 rounded-full shadow-lg text-sm font-bold text-emerald-800 flex items-center gap-2 z-20 border border-white">
-          <Star size={18} className="text-yellow-500 fill-yellow-500" /> Tổng: {letters.length} phong bì
+        <div className="absolute bottom-8 left-6 md:left-8 bg-white/90 backdrop-blur px-5 py-3 rounded-full shadow-lg text-sm font-bold text-emerald-800 flex items-center gap-2 z-20 border border-white">
+          <Star size={18} className="text-yellow-500 fill-yellow-500" /> 
+          <span className="hidden sm:inline">Tổng số:</span> {letters.length} phong bì
         </div>
       </main>
 
@@ -267,19 +287,32 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal Đọc Thư */}
+      {/* Modal Đọc Thư & Quyền Xoá Của Admin */}
       {readingLetter && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div style={{ backgroundColor: readingLetter.color || '#FFFACD' }} className="rounded-2xl shadow-2xl w-full max-w-md p-8 relative border border-black/10 animate-in zoom-in-95 duration-200">
-            <button onClick={() => setReadingLetter(null)} className="absolute top-4 right-4 text-gray-700 hover:text-black bg-white/40 hover:bg-white/80 transition p-1.5 rounded-full"><X size={18} /></button>
             
-            <div className="mb-6 border-b border-black/10 pb-3">
+            {/* Nút Đóng */}
+            <button onClick={() => setReadingLetter(null)} className="absolute top-4 right-4 text-gray-700 hover:text-black bg-white/40 hover:bg-white/80 transition p-1.5 rounded-full z-10">
+              <X size={18} />
+            </button>
+            
+            {/* Nút XOÁ THƯ (Dành riêng cho Admin) */}
+            <button 
+              onClick={handleDeleteLetter} 
+              title="Xóa thư (Chỉ Admin)"
+              className="absolute bottom-4 left-4 text-red-400 hover:text-red-600 hover:bg-red-50 transition bg-white/40 p-2 rounded-full z-10"
+            >
+              <Trash2 size={18} />
+            </button>
+
+            <div className="mb-6 border-b border-black/10 pb-3 pr-8">
               <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-800 bg-white/50 px-3 py-1.5 rounded-full shadow-sm">
                 Đến: {readingLetter.recipient}
               </span>
             </div>
             
-            <p className="text-gray-900 font-serif text-xl italic mb-8 leading-relaxed">
+            <p className="text-gray-900 font-serif text-xl italic mb-10 leading-relaxed whitespace-pre-wrap">
               "{readingLetter.message}"
             </p>
             
